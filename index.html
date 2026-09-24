@@ -1708,13 +1708,12 @@
   <div id="admission-enquiry-modal" class="modal-backdrop" role="dialog" aria-modal="true"
     aria-labelledby="admission-modal-title">
     <div class="modal-dialog admission-modal-dialog">
-      <div class="modal-header">
-        <div>
-          <span class="section-badge" style="font-size: 0.72rem; margin-bottom: 4px; display: inline-block;">Admissions
-            Desk</span>
-          <h3 id="admission-modal-title">Admission Enquiry</h3>
+      <div class="modal-header admission-modal-header">
+        <div class="admission-modal-header-content">
+          <h3 id="admission-modal-title">ADMISSION ENQUIRY</h3>
+          <p class="admission-modal-subtitle">Fill in your details below to enquire directly with Skillence Academy</p>
         </div>
-        <button type="button" id="admission-modal-close-btn" class="modal-close-btn"
+        <button type="button" id="admission-modal-close-btn" class="modal-close-btn admission-modal-close-btn"
           aria-label="Close admission enquiry dialog">&times;</button>
       </div>
 
@@ -1801,15 +1800,19 @@
           <div class="form-group">
             <label for="popup-enquiry-message" class="form-label">Message <span
                 class="form-optional-tag">(Optional)</span></label>
-            <textarea id="popup-enquiry-message" name="message" class="form-control" rows="3"
+            <textarea id="popup-enquiry-message" name="message" class="form-control" rows="2"
               placeholder="Tell us about your questions or batch preferences..."></textarea>
           </div>
 
           <!-- Submit Button -->
-          <button type="submit" id="popup-submit-btn" class="btn btn-primary btn-block">
+          <button type="submit" id="popup-submit-btn" class="btn btn-primary btn-block" style="margin-top: 14px;">
             <span class="btn-spinner" style="display: none;" aria-hidden="true"></span>
             <span class="btn-text">Submit Enquiry</span>
           </button>
+
+          <p id="popup-form-status-msg" class="form-helper-text">
+            Your enquiry will be recorded and confirmed by our admissions desk.
+          </p>
         </form>
       </div>
     </div>
