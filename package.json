@@ -4,11 +4,22 @@
   "description": "Skillence Academy Official Website",
   "main": "main.js",
   "scripts": {
-    "build": "node generate-manifest.js",
+    "build": "node build.js",
     "manifest": "node generate-manifest.js",
     "test": "node test_verify.js"
   },
-  "keywords": ["skillence", "academy", "admissions", "education"],
+  "keywords": [
+    "skillence",
+    "academy",
+    "admissions",
+    "education"
+  ],
   "author": "Skillence Academy",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "clean-css": "^5.3.3",
+    "html-minifier-terser": "^7.2.0",
+    "jsdom": "^30.1.1",
+    "terser": "^5.51.2"
+  }
 }

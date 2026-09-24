@@ -24,13 +24,21 @@ try {
     $listener.Start()
 }
 
-# Auto-generate or refresh media manifest on server startup
+# Auto-generate or refresh production assets on server startup
 try {
-    $manifestScript = Join-Path $baseDir "generate-manifest.js"
-    if (Test-Path $manifestScript) {
+    $buildScript = Join-Path $baseDir "build.js"
+    if (Test-Path $buildScript) {
         $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
         if ($nodeCmd) {
-            Start-Process -FilePath "node" -ArgumentList "`"$manifestScript`"" -NoNewWindow -Wait
+            Start-Process -FilePath "node" -ArgumentList "`"$buildScript`"" -NoNewWindow -Wait
+        }
+    } else {
+        $manifestScript = Join-Path $baseDir "generate-manifest.js"
+        if (Test-Path $manifestScript) {
+            $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+            if ($nodeCmd) {
+                Start-Process -FilePath "node" -ArgumentList "`"$manifestScript`"" -NoNewWindow -Wait
+            }
         }
     }
 } catch {}
@@ -117,6 +125,24 @@ try {
 
                 try {
                     $newLead = $bodyStr | ConvertFrom-Json
+
+                    # Backend validation: Exactly 10-digit mobile number
+                    $phoneStr = ""
+                    if ($null -ne $newLead.phone) {
+                        $phoneStr = [string]$newLead.phone
+                    }
+                    $phoneStr = $phoneStr.Trim()
+
+                    if (-not ($phoneStr -match '^[0-9]{10}$')) {
+                        $response.StatusCode = 400
+                        $errBytes = [System.Text.Encoding]::UTF8.GetBytes('{"success":false,"error":"Please enter a valid 10-digit mobile number."}')
+                        $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
+                        $response.Close()
+                        continue
+                    }
+
+                    # Preserve phone number as string
+                    $newLead.phone = $phoneStr
                     $newLead | Add-Member -NotePropertyName "receivedAt" -NotePropertyValue (Get-Date -Format "yyyy-MM-dd HH:mm:ss") -Force
                     $leadsList += $newLead
 
@@ -133,6 +159,44 @@ try {
                     $response.OutputStream.Write($failBytes, 0, $failBytes.Length)
                 }
 
+                $response.Close()
+                continue
+            }
+
+            # ==========================================
+            # SECURITY FILTER: BLOCK SOURCE MAPS & PRIVATE BACKEND FILES
+            # ==========================================
+            $lowerPath = $rawPath.ToLower()
+            $fileName = [System.IO.Path]::GetFileName($rawPath).ToLower()
+            $reqExt = [System.IO.Path]::GetExtension($rawPath).ToLower()
+
+            # Disable publicly served production source maps
+            if ($reqExt -eq ".map" -or $lowerPath.EndsWith(".map")) {
+                $response.StatusCode = 404
+                $response.ContentType = "text/plain; charset=utf-8"
+                $errBytes = [System.Text.Encoding]::UTF8.GetBytes("Source maps are disabled.")
+                $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
+                $response.Close()
+                continue
+            }
+
+            # Ensure secret keys, credentials, and private server logic are kept on the backend
+            $blockedFiles = @(
+                "leads.json",
+                "server.ps1",
+                "start-server.bat",
+                "generate-manifest.js",
+                "build.js",
+                "package.json",
+                "package-lock.json",
+                "test_complete_suite.js",
+                "test_verify.js"
+            )
+            if ($blockedFiles -contains $fileName -or $lowerPath.StartsWith("/.git") -or $lowerPath.StartsWith("/src/")) {
+                $response.StatusCode = 403
+                $response.ContentType = "text/plain; charset=utf-8"
+                $errBytes = [System.Text.Encoding]::UTF8.GetBytes("Access denied.")
+                $response.OutputStream.Write($errBytes, 0, $errBytes.Length)
                 $response.Close()
                 continue
             }
