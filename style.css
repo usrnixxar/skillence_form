@@ -2312,6 +2312,7 @@ textarea:focus-visible {
   padding: 20px;
   opacity: 0;
   transition: opacity 0.25s ease;
+  overflow-y: auto;
 }
 
 .modal-backdrop.open {
@@ -2559,24 +2560,30 @@ textarea:focus-visible {
 .admission-modal-dialog {
   max-width: 520px;
   width: 100%;
-  background: rgba(16, 44, 70, 0.94);
+  max-height: 90vh;
+  max-height: 90dvh;
+  background: rgba(16, 44, 70, 0.96);
   border: 1px solid var(--yellow);
   border-radius: var(--radius-md);
   padding: 0;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(245, 197, 24, 0.15);
   backdrop-filter: blur(12px);
   color: var(--white);
-  overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .admission-modal-dialog .modal-header.admission-modal-header {
-  background: transparent;
+  background: #0f2c47;
   border-bottom: 1px dashed rgba(245, 197, 24, 0.4);
-  padding: clamp(20px, 3vw, 26px) 24px 14px;
+  padding: clamp(18px, 2.5vw, 24px) 24px 14px;
   position: relative;
   text-align: center;
   display: block;
+  flex-shrink: 0;
+  z-index: 20;
 }
 
 .admission-modal-dialog .admission-modal-header-content {
@@ -2634,8 +2641,31 @@ textarea:focus-visible {
 }
 
 .admission-modal-dialog .modal-body {
-  padding: clamp(18px, 3vw, 24px) clamp(20px, 3.5vw, 30px) clamp(24px, 3.5vw, 32px);
+  padding: clamp(16px, 2.5vw, 22px) clamp(20px, 3.5vw, 30px) clamp(24px, 3.5vw, 32px);
   background: transparent;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(245, 197, 24, 0.45) rgba(11, 30, 48, 0.5);
+}
+
+.admission-modal-dialog .modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.admission-modal-dialog .modal-body::-webkit-scrollbar-track {
+  background: rgba(11, 30, 48, 0.45);
+  border-radius: 4px;
+}
+
+.admission-modal-dialog .modal-body::-webkit-scrollbar-thumb {
+  background: rgba(245, 197, 24, 0.4);
+  border-radius: 4px;
+}
+
+.admission-modal-dialog .modal-body::-webkit-scrollbar-thumb:hover {
+  background: var(--yellow);
 }
 
 .admission-modal-dialog .form-group {
