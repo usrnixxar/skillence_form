@@ -1,17 +1,9 @@
-﻿[
-    {
-        "name":  "Rahul Sharma",
-        "phone":  "9876543210",
-        "course":  "Tally with GST",
-        "city":  "Pelawal",
-        "receivedAt":  "2026-09-24 08:20:16"
-    },
-    {
-        "name":  "Verification Lead",
-        "phone":  "9060828274",
-        "course":  "Tally with GST",
-        "email":  "lead@skillence.test",
-        "message":  "Comprehensive verification test enquiry",
-        "receivedAt":  "2026-09-24 18:38:02"
-    }
+[
+  {
+    "name": "Rahul Sharma",
+    "phone": "9876543210",
+    "course": "Tally with GST",
+    "city": "Pelawal",
+    "receivedAt": "2026-09-24 08:20:16"
+  }
 ]
