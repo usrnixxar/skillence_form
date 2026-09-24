@@ -24,7 +24,7 @@ if (missing.length === 0) {
   console.error('❌ Missing target IDs:', missing);
 }
 
-// 2. Check form elements
+// 2. Check form elements & new modal elements
 const requiredIds = [
   'admissions-enquiry-form',
   'enquiry-name',
@@ -32,7 +32,24 @@ const requiredIds = [
   'enquiry-email',
   'enquiry-course',
   'enquiry-city',
+  'enquiry-message',
   'btn-submit-enquiry',
+  'admission-enquiry-modal',
+  'popup-admission-form',
+  'popup-enquiry-name',
+  'popup-enquiry-phone',
+  'popup-enquiry-email',
+  'popup-enquiry-course',
+  'popup-enquiry-message',
+  'popup-submit-btn',
+  'video-player-modal',
+  'modal-video-element',
+  'card-ai-productive',
+  'card-ai-videos',
+  'card-sample-projects',
+  'frame-ai-productive',
+  'frame-ai-videos',
+  'frame-sample-projects',
   'course-details-modal',
   'gallery-lightbox-modal',
   'nav-toggle-btn',
@@ -46,7 +63,7 @@ requiredIds.forEach(id => {
 });
 
 if (missingIds.length === 0) {
-  console.log('✅ ALL CRITICAL DOM IDs EXIST!');
+  console.log('✅ ALL CRITICAL DOM IDs EXIST (INCLUDING MODALS & MEDIA CARDS)!');
 } else {
   console.error('❌ Missing IDs:', missingIds);
 }
@@ -70,6 +87,8 @@ const images = [
   'assets/student_work/paint_assignment_1.png',
   'assets/student_work/video_color_grading.png',
   'assets/student_work/web_project_taskapp.jpg',
+  'assets/student_work/log_vs_rec709.jpg',
+  'assets/student_work/paint_assignment_2.png',
   'mentor.png'
 ];
 
@@ -82,6 +101,40 @@ if (missingImages.length === 0) {
   console.log('✅ ALL LOCAL IMAGES EXIST AND ARE READY!');
 } else {
   console.error('❌ Missing images:', missingImages);
+}
+
+// 6. Verify Exact Card Titles in Student Work Section
+const titles = ['AI Productive', 'AI Videos', 'Sample Projects'];
+let missingTitles = [];
+titles.forEach(t => {
+  if (!html.includes(t)) missingTitles.push(t);
+});
+if (missingTitles.length === 0) {
+  console.log('✅ ALL THREE EXACT MEDIA CARD TITLES EXIST: AI Productive, AI Videos, Sample Projects!');
+} else {
+  console.error('❌ Missing card titles:', missingTitles);
+}
+
+// 7. Verify Social CTA Links and Order in Contact Section
+const instagramLink = "https://www.instagram.com/skillence1?stkn=MTM0b3E3dnlkZzF3aw==";
+const youtubeLink = "https://youtube.com/@skillence1?si=Eb8UMnWVQGnXLkxM";
+
+if (html.includes(instagramLink) && html.includes(youtubeLink)) {
+  console.log('✅ INSTAGRAM & YOUTUBE LINKS VERIFIED!');
+} else {
+  console.error('❌ Missing Instagram or YouTube links in HTML');
+}
+
+// 8. Verify media-manifest.json exists and is valid
+if (fs.existsSync('./media-manifest.json')) {
+  try {
+    const manifest = JSON.parse(fs.readFileSync('./media-manifest.json', 'utf8'));
+    console.log(`✅ media-manifest.json valid: ${manifest.aiProductive.length} AI Productive, ${manifest.aiVideos.length} AI Videos, ${manifest.sampleProjects.length} Sample Projects`);
+  } catch (e) {
+    console.error('❌ media-manifest.json parse error:', e.message);
+  }
+} else {
+  console.error('❌ media-manifest.json does not exist');
 }
 
 console.log('\n--- VERIFICATION COMPLETED SUCCESSFULLY ---');

@@ -1,0 +1,84 @@
+{
+  "aiProductive": [
+    {
+      "src": "ai productive/bag.mp4",
+      "filename": "bag.mp4",
+      "title": "Bag"
+    },
+    {
+      "src": "ai productive/MULTI CAM 2.mp4",
+      "filename": "MULTI CAM 2.mp4",
+      "title": "MULTI CAM 2"
+    },
+    {
+      "src": "ai productive/multi cam.mp4",
+      "filename": "multi cam.mp4",
+      "title": "Multi Cam"
+    },
+    {
+      "src": "ai productive/Neuropathy solo podcaset.mp4",
+      "filename": "Neuropathy solo podcaset.mp4",
+      "title": "Neuropathy Solo Podcaset"
+    },
+    {
+      "src": "ai productive/ugc style 2.mp4",
+      "filename": "ugc style 2.mp4",
+      "title": "Ugc Style 2"
+    },
+    {
+      "src": "ai productive/ugc style.mp4",
+      "filename": "ugc style.mp4",
+      "title": "Ugc Style"
+    }
+  ],
+  "aiVideos": [
+    {
+      "src": "ai videos/bheem part 1.mp4",
+      "filename": "bheem part 1.mp4",
+      "title": "Bheem Part 1"
+    },
+    {
+      "src": "ai videos/video editing kahan sikhe.mp4",
+      "filename": "video editing kahan sikhe.mp4",
+      "title": "Video Editing Kahan Sikhe"
+    }
+  ],
+  "sampleProjects": [
+    {
+      "type": "image",
+      "src": "assets/student_work/paint_assignment_1.png",
+      "title": "MS Paint Precision Art",
+      "category": "ADCA+ Fundamental Assignment",
+      "desc": "Mouse control and precision color drawing assignment completed by beginner students during computer fundamentals module."
+    },
+    {
+      "type": "image",
+      "src": "assets/student_work/video_color_grading.png",
+      "title": "LOG to Rec.709 Color Grade",
+      "category": "Video Editing Assignment",
+      "desc": "Practical video project demonstrating raw camera footage normalization, Lumetri color scopes, and creative look styling."
+    },
+    {
+      "type": "image",
+      "src": "assets/student_work/web_project_taskapp.jpg",
+      "title": "Responsive Interface Build",
+      "category": "Web Fundamentals Assignment",
+      "desc": "Clean HTML & CSS web layout practice demonstrating modern responsive design and component styling principles."
+    },
+    {
+      "type": "image",
+      "src": "assets/student_work/log_vs_rec709.jpg",
+      "title": "Rec.709 LUT Comparison",
+      "category": "Video Editing Color Grade",
+      "desc": "Direct side-by-side comparison of flat LOG footage vs converted Rec.709 balanced color contrast."
+    },
+    {
+      "type": "image",
+      "src": "assets/student_work/paint_assignment_2.png",
+      "title": "Taj Mahal Digital Illustration",
+      "category": "ADCA+ Creative Assignment",
+      "desc": "Detailed monochrome illustration of the Taj Mahal drawn completely inside MS Paint."
+    }
+  ],
+  "generatedAt": "2026-09-24T13:53:06.683Z"
+}

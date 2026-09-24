@@ -24,6 +24,17 @@ try {
     $listener.Start()
 }
 
+# Auto-generate or refresh media manifest on server startup
+try {
+    $manifestScript = Join-Path $baseDir "generate-manifest.js"
+    if (Test-Path $manifestScript) {
+        $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+        if ($nodeCmd) {
+            Start-Process -FilePath "node" -ArgumentList "`"$manifestScript`"" -NoNewWindow -Wait
+        }
+    }
+} catch {}
+
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host " Skillence Academy Local Server is ACTIVE & RUNNING!   " -ForegroundColor Green
 Write-Host "--------------------------------------------------------" -ForegroundColor Cyan
@@ -109,7 +120,8 @@ try {
                     $newLead | Add-Member -NotePropertyName "receivedAt" -NotePropertyValue (Get-Date -Format "yyyy-MM-dd HH:mm:ss") -Force
                     $leadsList += $newLead
 
-                    $leadsList | ConvertTo-Json -Depth 5 | Set-Content $leadsFile -Encoding UTF8
+                    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+                    [System.IO.File]::WriteAllText($leadsFile, ($leadsList | ConvertTo-Json -Depth 5), $utf8NoBom)
                     Write-Host "[LEAD RECORDED] $($newLead.name) - $($newLead.course) ($($newLead.phone))" -ForegroundColor Green
 
                     $response.StatusCode = 200
@@ -126,7 +138,7 @@ try {
             }
 
             # ==========================================
-            # STATIC FILES SERVING
+            # STATIC FILES SERVING (WITH HTTP RANGE FOR SMOOTH VIDEO PLAYBACK)
             # ==========================================
             $filePath = Join-Path $baseDir ($rawPath.TrimStart("/").Replace("/", "\"))
             
@@ -138,10 +150,56 @@ try {
                     $response.ContentType = "application/octet-stream"
                 }
 
-                $fileBytes = [System.IO.File]::ReadAllBytes($filePath)
-                $response.ContentLength64 = $fileBytes.Length
-                $response.StatusCode = 200
-                $response.OutputStream.Write($fileBytes, 0, $fileBytes.Length)
+                $fileInfo = New-Object System.IO.FileInfo($filePath)
+                $fileLength = $fileInfo.Length
+                $rangeHeader = $request.Headers["Range"]
+
+                $response.AddHeader("Accept-Ranges", "bytes")
+
+                if ($rangeHeader -and $rangeHeader.StartsWith("bytes=")) {
+                    $rangeSpec = $rangeHeader.Substring(6).Split("-")
+                    $start = 0L
+                    $end = $fileLength - 1L
+
+                    if ($rangeSpec[0] -and $rangeSpec[0].Trim()) {
+                        [Int64]::TryParse($rangeSpec[0], [ref]$start) | Out-Null
+                    }
+                    if ($rangeSpec.Length -gt 1 -and $rangeSpec[1] -and $rangeSpec[1].Trim()) {
+                        [Int64]::TryParse($rangeSpec[1], [ref]$end) | Out-Null
+                    }
+
+                    if ($end -ge $fileLength) { $end = $fileLength - 1L }
+                    $contentLength = $end - $start + 1L
+
+                    $response.StatusCode = 206
+                    $response.AddHeader("Content-Range", "bytes $start-$end/$fileLength")
+                    $response.ContentLength64 = $contentLength
+
+                    $fs = [System.IO.File]::OpenRead($filePath)
+                    try {
+                        $fs.Seek($start, [System.IO.SeekOrigin]::Begin) | Out-Null
+                        $buffer = New-Object byte[] 65536
+                        $bytesRemaining = $contentLength
+                        while ($bytesRemaining -gt 0) {
+                            $toRead = [Math]::Min($buffer.Length, $bytesRemaining)
+                            $read = $fs.Read($buffer, 0, $toRead)
+                            if ($read -le 0) { break }
+                            $response.OutputStream.Write($buffer, 0, $read)
+                            $bytesRemaining -= $read
+                        }
+                    } finally {
+                        $fs.Close()
+                    }
+                } else {
+                    $response.StatusCode = 200
+                    $response.ContentLength64 = $fileLength
+                    $fs = [System.IO.File]::OpenRead($filePath)
+                    try {
+                        $fs.CopyTo($response.OutputStream)
+                    } finally {
+                        $fs.Close()
+                    }
+                }
             } else {
                 $response.StatusCode = 404
                 $response.ContentType = "text/html; charset=utf-8"

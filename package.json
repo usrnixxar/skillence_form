@@ -1,0 +1,14 @@
+{
+  "name": "skillence-academy",
+  "version": "1.0.0",
+  "description": "Skillence Academy Official Website",
+  "main": "main.js",
+  "scripts": {
+    "build": "node generate-manifest.js",
+    "manifest": "node generate-manifest.js",
+    "test": "node test_verify.js"
+  },
+  "keywords": ["skillence", "academy", "admissions", "education"],
+  "author": "Skillence Academy",
+  "license": "ISC"
+}
