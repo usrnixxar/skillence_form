@@ -1197,8 +1197,8 @@
               aria-label="Open AI Productive video player in popup" data-player="aiProductive">
               <div class="portrait-media-inner">
                 <!-- Dual video layers for subtle fade transitions -->
-                <video class="portrait-video-element video-layer-a active" muted playsinline preload="metadata"></video>
-                <video class="portrait-video-element video-layer-b" muted playsinline preload="metadata"></video>
+                <video class="portrait-video-element video-layer-a active" muted playsinline preload="none"></video>
+                <video class="portrait-video-element video-layer-b" muted playsinline preload="none"></video>
 
                 <!-- Overlay: Ambient Gradient & Info -->
                 <div class="portrait-media-overlay">
@@ -1252,8 +1252,8 @@
             <div class="portrait-media-wrapper" id="frame-ai-videos" tabindex="0" role="button"
               aria-label="Open AI Videos player in popup" data-player="aiVideos">
               <div class="portrait-media-inner">
-                <video class="portrait-video-element video-layer-a active" muted playsinline preload="metadata"></video>
-                <video class="portrait-video-element video-layer-b" muted playsinline preload="metadata"></video>
+                <video class="portrait-video-element video-layer-a active" muted playsinline preload="none"></video>
+                <video class="portrait-video-element video-layer-b" muted playsinline preload="none"></video>
 
                 <div class="portrait-media-overlay">
                   <div class="media-overlay-top">
@@ -1836,17 +1836,18 @@
       </div>
 
       <div class="video-player-container">
-        <video id="modal-video-element" controls playsinline preload="auto">
+        <video id="modal-video-element" controls playsinline preload="none">
           Your browser does not support HTML5 video playback.
         </video>
       </div>
 
       <div class="video-modal-footer">
-        <span class="video-modal-hint">Full resolution playback with audio &bull; Press Esc to close</span>
+        <span class="video-modal-hint">HD playback with audio &bull; Press Esc to close</span>
       </div>
     </div>
   </div>
 
+  <!-- MEDIA_MANIFEST -->
   <script src="main.js"></script>
 </body>
 

@@ -710,218 +710,173 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Card Video Controller Class ---
   class PortraitVideoController {
     constructor(config) {
-      this.cardId = config.cardId;
-      this.frameId = config.frameId;
-      this.titleId = config.titleId;
-      this.counterId = config.counterId;
-      this.unblockId = config.unblockId;
-      this.playlistKey = config.playlistKey;
-      this.displayCategory = config.displayCategory;
-
-      this.cardEl = document.getElementById(this.cardId);
-      this.frameEl = document.getElementById(this.frameId);
-      this.titleEl = document.getElementById(this.titleId);
-      this.counterEl = document.getElementById(this.counterId);
-      this.unblockBtn = document.getElementById(this.unblockId);
-
-      this.videoA = this.frameEl ? this.frameEl.querySelector('.video-layer-a') : null;
-      this.videoB = this.frameEl ? this.frameEl.querySelector('.video-layer-b') : null;
-
-      this.activeLayer = 'a'; // 'a' or 'b'
+      Object.assign(this, config);
+      this.cardEl = document.getElementById(config.cardId);
+      this.frameEl = document.getElementById(config.frameId);
+      this.titleEl = document.getElementById(config.titleId);
+      this.counterEl = document.getElementById(config.counterId);
+      this.unblockBtn = document.getElementById(config.unblockId);
+      this.videoA = this.frameEl?.querySelector('.video-layer-a');
+      this.videoB = this.frameEl?.querySelector('.video-layer-b');
+      this.activeLayer = 'a';
       this.playlist = [];
       this.shuffledIndices = [];
       this.currentShufflePos = 0;
-      this.lastPlayedIndex = -1;
       this.isVisibleInViewport = false;
       this.isPlaying = false;
-
+      this.loading = false;
+      this.loadToken = 0;
+      this.suspendedTime = 0;
       this.initEvents();
     }
-
     setPlaylist(list) {
-      if (!list || list.length === 0) return;
+      if (!list?.length) return;
+      this.releasePreview();
       this.playlist = list;
-      this.shuffledIndices = createShuffledIndices(this.playlist.length);
+      this.shuffledIndices = createShuffledIndices(list.length);
       this.currentShufflePos = 0;
-      this.loadCurrentVideo(false);
+      this.updateLabels();
+      this.resumePreview();
     }
-
-    getCurrentItem() {
-      if (this.playlist.length === 0) return null;
-      const index = this.shuffledIndices[this.currentShufflePos];
-      return this.playlist[index];
+    getCurrentItem() { return this.playlist[this.shuffledIndices[this.currentShufflePos]]; }
+    getActiveVideo() { return this.activeLayer === 'a' ? this.videoA : this.videoB; }
+    getInactiveVideo() { return this.activeLayer === 'a' ? this.videoB : this.videoA; }
+    updateLabels() {
+      const item = this.getCurrentItem();
+      if (!item) return;
+      if (this.titleEl) this.titleEl.textContent = item.title;
+      if (this.counterEl) this.counterEl.textContent = `${this.shuffledIndices[this.currentShufflePos] + 1} / ${this.playlist.length}`;
+      if (item.poster) this.getActiveVideo().poster = item.poster;
     }
-
-    getActiveVideo() {
-      return this.activeLayer === 'a' ? this.videoA : this.videoB;
-    }
-
-    getInactiveVideo() {
-      return this.activeLayer === 'a' ? this.videoB : this.videoA;
-    }
-
     initEvents() {
       if (!this.frameEl) return;
-
-      // Handle video ended -> advance to next
-      [this.videoA, this.videoB].forEach(v => {
-        if (!v) return;
-        v.addEventListener('ended', () => {
-          this.advanceToNext();
+      [this.videoA, this.videoB].forEach(video => {
+        if (!video) return;
+        video.preload = 'none';
+        video.muted = true;
+        video.playsInline = true;
+        video.addEventListener('ended', () => {
+          if (video === this.getActiveVideo()) this.advanceToNext();
+        });
+        video.addEventListener('error', () => {
+          this.loading = false;
+          if (this.unblockBtn) this.unblockBtn.style.display = 'flex';
         });
       });
-
-      // Click to open centered modal player
-      this.frameEl.addEventListener('click', () => {
-        this.openInModal();
-      });
-
-      this.frameEl.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
+      this.frameEl.addEventListener('click', () => this.openInModal());
+      this.frameEl.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
           this.openInModal();
         }
       });
-
-      // Unblock button click if autoplay was blocked
-      if (this.unblockBtn) {
-        this.unblockBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const activeVid = this.getActiveVideo();
-          if (activeVid) {
-            activeVid.muted = true;
-            activeVid.play().then(() => {
-              this.unblockBtn.style.display = 'none';
-            }).catch(() => {});
-          }
-        });
-      }
+      this.unblockBtn?.addEventListener('click', event => {
+        event.stopPropagation();
+        this.resumePreview();
+      });
     }
-
-    loadCurrentVideo(animate = true) {
+    loadCurrentVideo(animate = false) {
       const item = this.getCurrentItem();
-      if (!item) return;
-
-      const activeVid = this.getActiveVideo();
-      const nextVid = animate ? this.getInactiveVideo() : activeVid;
-
-      if (!nextVid) return;
-
-      // Update UI title and counter
-      if (this.titleEl) this.titleEl.textContent = item.title;
-      if (this.counterEl) {
-        const currentItemNum = this.shuffledIndices[this.currentShufflePos] + 1;
-        this.counterEl.textContent = `${currentItemNum} / ${this.playlist.length}`;
-      }
-
-      // Encode filename safely preserving path
-      const encodedSrc = encodeURI(item.src);
-      nextVid.src = encodedSrc;
-      nextVid.muted = true;
-      nextVid.playsInline = true;
-
-      // Subtle crossfade
-      if (animate && this.videoA && this.videoB) {
-        const onCanPlay = () => {
-          nextVid.removeEventListener('canplay', onCanPlay);
-          if (this.isVisibleInViewport && !document.hidden && !isAnyModalOpen()) {
-            nextVid.play().then(() => {
-              nextVid.classList.add('active');
-              activeVid.classList.remove('active');
-              setTimeout(() => {
-                activeVid.pause();
-                activeVid.removeAttribute('src'); // Free memory
-                activeVid.load();
-              }, 450);
-              this.activeLayer = this.activeLayer === 'a' ? 'b' : 'a';
-              this.isPlaying = true;
-              if (this.unblockBtn) this.unblockBtn.style.display = 'none';
-            }).catch(() => {
-              if (this.unblockBtn) this.unblockBtn.style.display = 'flex';
-            });
-          }
-        };
-        nextVid.addEventListener('canplay', onCanPlay);
-        nextVid.load();
-      } else {
-        // Initial load without crossfade
-        nextVid.classList.add('active');
-        if (this.isVisibleInViewport && !document.hidden && !isAnyModalOpen()) {
-          nextVid.play().then(() => {
-            this.isPlaying = true;
-            if (this.unblockBtn) this.unblockBtn.style.display = 'none';
-          }).catch(() => {
-            if (this.unblockBtn) this.unblockBtn.style.display = 'flex';
-          });
+      if (!item || !this.isVisibleInViewport || document.hidden || isAnyModalOpen()) return;
+      const oldVideo = this.getActiveVideo();
+      const video = animate ? this.getInactiveVideo() : oldVideo;
+      if (!video) return;
+      const token = ++this.loadToken;
+      this.loading = true;
+      video.preload = 'auto';
+      video.poster = item.poster || '';
+      video.oncanplay = () => {
+        if (token !== this.loadToken) return;
+        video.oncanplay = null;
+        this.loading = false;
+        if (animate) {
+          video.classList.add('active');
+          oldVideo.classList.remove('active');
+          this.activeLayer = this.activeLayer === 'a' ? 'b' : 'a';
+          oldVideo.pause();
+          oldVideo.removeAttribute('src');
+          oldVideo.load();
         }
-      }
+        if (this.suspendedTime > 0 && this.suspendedTime < video.duration) video.currentTime = this.suspendedTime;
+        this.suspendedTime = 0;
+        this.playActive();
+      };
+      video.src = encodeURI(item.previewSrc || item.src);
+      video.load();
     }
-
+    playActive() {
+      if (!this.isVisibleInViewport || document.hidden || isAnyModalOpen()) return;
+      const video = this.getActiveVideo();
+      if (!video?.getAttribute('src')) return;
+      video.play().then(() => {
+        // A modal/scroll may have happened while play() was pending.
+        if (!this.isVisibleInViewport || document.hidden || isAnyModalOpen()) { video.pause(); return; }
+        this.isPlaying = true;
+        if (this.unblockBtn) this.unblockBtn.style.display = 'none';
+      }).catch(error => {
+        if (error.name !== 'AbortError' && this.unblockBtn) this.unblockBtn.style.display = 'flex';
+      });
+    }
     advanceToNext() {
-      if (this.playlist.length === 0) return;
-
-      this.lastPlayedIndex = this.shuffledIndices[this.currentShufflePos];
+      if (!this.playlist.length) return;
+      const last = this.shuffledIndices[this.currentShufflePos];
       this.currentShufflePos++;
-
-      // When entire playlist has played, reshuffle
       if (this.currentShufflePos >= this.shuffledIndices.length) {
-        this.shuffledIndices = createShuffledIndices(this.playlist.length, this.lastPlayedIndex);
+        this.shuffledIndices = createShuffledIndices(this.playlist.length, last);
         this.currentShufflePos = 0;
       }
-
-      this.loadCurrentVideo(true);
+      this.suspendedTime = 0;
+      this.updateLabels();
+      if (this.isVisibleInViewport && !document.hidden && !isAnyModalOpen()) this.loadCurrentVideo(true);
+      else this.releasePreview();
     }
-
     pausePreview() {
-      const active = this.getActiveVideo();
-      if (active && !active.paused) {
-        active.pause();
-        this.isPlaying = false;
-      }
+      [this.videoA, this.videoB].forEach(video => video?.pause());
+      this.isPlaying = false;
     }
-
+    releasePreview() {
+      this.suspendedTime = this.getActiveVideo()?.currentTime || 0;
+      this.loadToken++;
+      this.loading = false;
+      [this.videoA, this.videoB].forEach(video => {
+        if (!video) return;
+        video.oncanplay = null;
+        video.pause();
+        if (video.hasAttribute('src')) { video.removeAttribute('src'); video.load(); }
+        video.preload = 'none';
+      });
+      this.isPlaying = false;
+    }
     resumePreview() {
       if (!this.isVisibleInViewport || document.hidden || isAnyModalOpen()) return;
-      const active = this.getActiveVideo();
-      if (active && active.paused && active.src) {
-        active.play().then(() => {
-          this.isPlaying = true;
-          if (this.unblockBtn) this.unblockBtn.style.display = 'none';
-        }).catch(() => {
-          if (this.unblockBtn) this.unblockBtn.style.display = 'flex';
-        });
-      }
+      if (!this.getActiveVideo()?.getAttribute('src')) {
+        if (!this.loading) this.loadCurrentVideo();
+      } else if (!this.loading) this.playActive();
     }
-
     openInModal() {
       const item = this.getCurrentItem();
-      const activeVid = this.getActiveVideo();
-      if (!item || !activeVid || !videoModal || !modalVideo) return;
-
-      const currentPlaybackTime = activeVid.currentTime || 0;
-      this.pausePreview();
-
-      // Set modal title & category
+      if (!item || !videoModal || !modalVideo) return;
+      // Stop both card downloads so bandwidth is available for the selected video.
+      productiveController.releasePreview();
+      videosController.releasePreview();
       if (videoModalTitle) videoModalTitle.textContent = item.title;
       if (videoModalCategory) videoModalCategory.textContent = this.displayCategory;
-
-      // Transfer video src and position
+      modalVideo.poster = item.poster || '';
+      modalVideo.preload = 'auto';
       modalVideo.src = encodeURI(item.src);
-      modalVideo.currentTime = currentPlaybackTime;
       modalVideo.muted = false;
-      modalVideo.volume = 1.0;
-
+      modalVideo.volume = 1;
       lastFocusedTrigger = this.frameEl;
       videoModal.classList.add('open');
       document.body.classList.add('modal-open');
-
-      modalVideo.play().catch(() => {
-        // Fallback if browser requires user gesture for audio
-        modalVideo.muted = true;
-        modalVideo.play().catch(() => {});
+      // Start the complete video at the beginning, independently of its short preview.
+      modalVideo.play().catch(error => {
+        if (error.name === 'NotAllowedError' && videoModal.classList.contains('open')) {
+          modalVideo.muted = true;
+          modalVideo.play().catch(() => {});
+        }
       });
-
-      if (videoModalCloseBtn) videoModalCloseBtn.focus();
+      videoModalCloseBtn?.focus();
     }
   }
 
@@ -1119,34 +1074,22 @@ document.addEventListener('DOMContentLoaded', () => {
     nextBtnId: 'gallery-next-btn'
   });
 
-  // Apply default manifest initially
-  productiveController.setPlaylist(defaultManifest.aiProductive);
-  videosController.setPlaylist(defaultManifest.aiVideos);
-  sampleProjectsController.setItems(defaultManifest.sampleProjects);
-
-  // Attempt to load dynamic manifest generated by build system
-  fetch('media-manifest.json')
-    .then(res => {
-      if (!res.ok) throw new Error('Manifest not found');
-      return res.json();
-    })
-    .then(data => {
-      if (data) {
-        mediaManifest = data;
-        if (data.aiProductive && data.aiProductive.length > 0) {
-          productiveController.setPlaylist(data.aiProductive);
-        }
-        if (data.aiVideos && data.aiVideos.length > 0) {
-          videosController.setPlaylist(data.aiVideos);
-        }
-        if (data.sampleProjects && data.sampleProjects.length > 0) {
-          sampleProjectsController.setItems(data.sampleProjects);
-        }
-      }
-    })
-    .catch(() => {
-      // Graceful fallback to default manifest
-    });
+  // The production build embeds optimized URLs; initialize once to avoid duplicate downloads.
+  const applyManifest = data => {
+    mediaManifest = data;
+    productiveController.setPlaylist(data.aiProductive);
+    videosController.setPlaylist(data.aiVideos);
+    sampleProjectsController.setItems(data.sampleProjects);
+  };
+  const embeddedManifest = document.getElementById('media-manifest');
+  if (embeddedManifest) {
+    applyManifest(JSON.parse(embeddedManifest.textContent));
+  } else {
+    fetch('media-manifest.json').then(response => {
+      if (!response.ok) throw new Error('Unable to load media');
+      return response.json();
+    }).then(applyManifest).catch(() => applyManifest(defaultManifest));
+  }
 
   // --- Close Video Modal Handler ---
   function closeVideoModal() {
@@ -1250,14 +1193,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (entry.isIntersecting) {
           productiveController.resumePreview();
         } else {
-          productiveController.pausePreview();
+          productiveController.releasePreview();
         }
       } else if (entry.target.id === 'card-ai-videos') {
         videosController.isVisibleInViewport = entry.isIntersecting;
         if (entry.isIntersecting) {
           videosController.resumePreview();
         } else {
-          videosController.pausePreview();
+          videosController.releasePreview();
         }
       }
     });
@@ -1271,8 +1214,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tab Visibility Change: pause offscreen / inactive previews
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
-      productiveController.pausePreview();
-      videosController.pausePreview();
+      productiveController.releasePreview();
+      videosController.releasePreview();
       if (modalVideo && !modalVideo.paused) {
         modalVideo.pause();
       }

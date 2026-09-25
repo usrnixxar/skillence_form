@@ -12,3 +12,7 @@ Thumbs.db
 # IDE & Editor folders
 .vscode/
 .idea/
+
+# Generated web media and build output
+dist/
+.cache/
