@@ -3114,3 +3114,16 @@ textarea:focus-visible {
     font-size: 1.75rem;
   }
 }
+/* Games submenu in main navigation */
+.nav-games-dropdown { position: relative; }
+.nav-games-dropdown > summary { display: block; cursor: pointer; list-style: none; }
+.nav-games-dropdown > summary::-webkit-details-marker { display: none; }
+.nav-games-dropdown > summary::before { content: '▾'; float: right; margin-left: 7px; }
+.nav-games-submenu { position: absolute; top: 100%; left: 0; z-index: 100; min-width: 160px; padding: 6px; background: var(--white); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-shadow: var(--shadow-md); }
+.nav-games-link { display: block; padding: 10px 12px; white-space: nowrap; font-weight: 600; border-radius: var(--radius-sm); }
+.nav-games-link:hover, .nav-games-link:focus-visible { background: var(--yellow-light); color: var(--navy); }
+@media (max-width: 768px) {
+  .nav-games-dropdown > summary { border-bottom: 1px solid var(--border-subtle); }
+  .nav-games-submenu { position: static; padding: 0 0 0 16px; border: 0; box-shadow: none; }
+  .nav-games-link { padding: 14px 16px; }
+}
