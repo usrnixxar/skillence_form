@@ -6,6 +6,22 @@
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
 
+  // Keep an ID for retries of unchanged details, including uncertain network results.
+  const pendingEnquiries = new Map();
+  async function submitEnquiry(payload) {
+    const key = JSON.stringify([payload.name, payload.phone, payload.email, payload.course, payload.message]);
+    if (!pendingEnquiries.has(key)) {
+      pendingEnquiries.set(key, crypto.randomUUID());
+    }
+    const response = await fetch('/api/leads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...payload, submissionId: pendingEnquiries.get(key) }),
+      signal: AbortSignal.timeout(25000)
+    });
+    return response;
+  }
+
   // ==========================================================================
   // 1. STICKY HEADER & SCROLL BEHAVIOR
   // ==========================================================================
@@ -378,15 +394,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const waUrl = `https://wa.me/919060828274?text=${encodeURIComponent(waLines.join('\n'))}`;
 
       try {
-        const response = await fetch('/api/leads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(leadPayload)
-        });
+        const response = await submitEnquiry(leadPayload);
 
         if (response.ok) {
-          const resData = await response.json().catch(() => ({ success: true }));
-          if (resData.success) {
+          const resData = await response.json();
+          if (resData.success === true) {
             // CONFIRMED SUCCESS STATE
             popupForm.style.display = 'none';
             if (popupSuccessBox) {
@@ -418,7 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (popupErrorBox) {
           popupErrorBox.style.display = 'block';
           if (popupErrorDesc) {
-            popupErrorDesc.textContent = `Unable to reach local admissions server. Your entered details have been preserved! You can retry or submit directly via WhatsApp.`;
+            popupErrorDesc.textContent = `Unable to confirm your enquiry was saved. Your entered details have been preserved! You can retry or submit directly via WhatsApp.`;
           }
           if (popupErrorWhatsApp) {
             popupErrorWhatsApp.href = waUrl;
@@ -574,22 +586,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const waUrl = `https://wa.me/919060828274?text=${encodeURIComponent(waLines.join('\n'))}`;
 
       try {
-        const response = await fetch('/api/leads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+        const response = await submitEnquiry({
             name: nameVal,
             phone: phoneVal,
             email: emailVal,
             course: courseVal,
             message: msgVal,
             submittedAt: new Date().toISOString()
-          })
         });
 
         if (response.ok) {
-          const resData = await response.json().catch(() => ({ success: true }));
-          if (resData.success) {
+          const resData = await response.json();
+          if (resData.success === true) {
             heroForm.style.display = 'none';
             if (heroSuccessBox) {
               heroSuccessBox.style.display = 'block';

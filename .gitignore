@@ -16,3 +16,6 @@ Thumbs.db
 # Generated web media and build output
 dist/
 .cache/
+.env
+.env.*
+.vercel/
